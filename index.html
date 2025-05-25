@@ -139,6 +139,10 @@
                 max-width: 95%;  /* 在小屏幕上增加图片显示区域 */
             }
             
+            .carousel-nav {
+                display: none !important; /* 在移动端隐藏导航按钮 */
+            }
+            
             .zoom-btn, .rotate-btn {
                 width: 32px;
                 height: 32px;
@@ -168,6 +172,10 @@
             
             .carousel-indicators {
                 bottom: 5px;
+            }
+            
+            .carousel-nav {
+                display: none !important; /* 在移动端横屏模式下也隐藏导航按钮 */
             }
         }
         
@@ -252,6 +260,51 @@
             background-color: white;
             transform: scale(1.2);
         }
+        
+        /* 移动端专用切换按钮 */
+        .mobile-nav-buttons {
+            display: none; /* 默认隐藏 */
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 30;
+            gap: 40px; /* 增加按钮之间的距离 */
+        }
+        
+        .mobile-nav-btn {
+            width: 45px;
+            height: 45px;
+            background-color: rgba(0, 0, 0, 0.6);
+            color: white;
+            border: 2px solid white;
+            border-radius: 50%;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .mobile-nav-btn:hover,
+        .mobile-nav-btn:active {
+            background-color: rgba(0, 0, 0, 0.8);
+            transform: scale(1.1);
+        }
+        
+        /* 在移动设备上显示移动端专用按钮 */
+        @media (max-width: 768px) {
+            .mobile-nav-buttons {
+                display: flex;
+            }
+            
+            .carousel-indicators {
+                bottom: 80px; /* 为移动端按钮腾出空间 */
+            }
+        }
     </style>
 </head>
 <body>
@@ -279,6 +332,12 @@
 
         <!-- 添加滑动提示 -->
         <div class="swipe-hint" id="swipe-hint">左右滑动切换图片</div>
+        
+        <!-- 移动端专用切换按钮 -->
+        <div class="mobile-nav-buttons">
+            <div class="mobile-nav-btn mobile-prev" id="mobile-prev">←</div>
+            <div class="mobile-nav-btn mobile-next" id="mobile-next">→</div>
+        </div>
     </div>
 
     <script>
@@ -286,6 +345,8 @@
             const track = document.getElementById('track');
             const nextButton = document.getElementById('next');
             const prevButton = document.getElementById('prev');
+            const mobileNextButton = document.getElementById('mobile-next');
+            const mobilePrevButton = document.getElementById('mobile-prev');
             const indicatorsContainer = document.getElementById('indicators');
             const zoomInButton = document.getElementById('zoom-in');
             const zoomOutButton = document.getElementById('zoom-out');
@@ -369,6 +430,15 @@
             });
             
             prevButton.addEventListener('click', () => {
+                goToSlide(currentIndex - 1);
+            });
+            
+            // 移动端专用按钮事件
+            mobileNextButton.addEventListener('click', () => {
+                goToSlide(currentIndex + 1);
+            });
+            
+            mobilePrevButton.addEventListener('click', () => {
                 goToSlide(currentIndex - 1);
             });
             

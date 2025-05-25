@@ -140,9 +140,7 @@
             }
             
             .carousel-nav {
-                width: 40px;
-                height: 40px;
-                font-size: 20px;
+                display: none !important; /* 在移动端隐藏导航按钮 */
             }
             
             .zoom-btn, .rotate-btn {
@@ -175,6 +173,34 @@
             .carousel-indicators {
                 bottom: 5px;
             }
+            
+            .carousel-nav {
+                display: none !important; /* 在移动端横屏模式下也隐藏导航按钮 */
+            }
+        }
+        
+        /* 滑动提示样式 */
+        .swipe-hint {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 25px;
+            font-size: 16px;
+            z-index: 100;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            pointer-events: none;
+            text-align: center;
+            width: auto;
+            max-width: 80%;
+        }
+        
+        .swipe-hint.visible {
+            opacity: 1;
         }
         
         .carousel-nav {
@@ -258,6 +284,9 @@
             <div class="rotate-btn" id="rotate-left">↺</div>
             <div class="rotate-btn" id="rotate-right">↻</div>
         </div>
+
+        <!-- 添加滑动提示 -->
+        <div class="swipe-hint" id="swipe-hint">左右滑动切换图片</div>
     </div>
 
     <script>
@@ -270,6 +299,7 @@
             const zoomOutButton = document.getElementById('zoom-out');
             const rotateLeftButton = document.getElementById('rotate-left');
             const rotateRightButton = document.getElementById('rotate-right');
+            const swipeHint = document.getElementById('swipe-hint');
             
             // 图片数据数组
             const images = [
@@ -420,6 +450,26 @@
             rotateRightButton.addEventListener('click', () => {
                 currentRotation += rotateStep;
                 updateImageTransform();
+            });
+            
+            // 显示滑动提示（仅在移动设备上）
+            function showSwipeHint() {
+                if (window.innerWidth <= 768) {
+                    swipeHint.classList.add('visible');
+                    setTimeout(() => {
+                        swipeHint.classList.remove('visible');
+                    }, 3000); // 3秒后隐藏提示
+                }
+            }
+            
+            // 页面加载后显示滑动提示
+            showSwipeHint();
+            
+            // 在窗口大小改变时重新检查是否需要显示提示
+            window.addEventListener('resize', () => {
+                if (window.innerWidth <= 768) {
+                    showSwipeHint();
+                }
             });
         });
     </script>

@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图片轮播</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+        }
+        
+        .carousel-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .carousel-track {
+            display: flex;
+            height: 100%;
+            transition: transform 0.5s ease-in-out;
+        }
+        
+        .carousel-slide {
+            min-width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .carousel-slide img {
+            max-width: 90%;
+            max-height: 85vh;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            cursor: zoom-in;
+            transition: transform 0.3s ease;
+        }
+        
+        .carousel-slide img.zoomed {
+            cursor: move;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+        }
+        
+        .zoom-controls {
+            position: absolute;
+            bottom: 70px;
+            right: 30px;
+            display: flex;
+            gap: 10px;
+            z-index: 20;
+        }
+        
+        .rotate-controls {
+            position: absolute;
+            bottom: 70px;
+            left: 30px;
+            display: flex;
+            gap: 10px;
+            z-index: 20;
+        }
+        
+        .zoom-btn, .rotate-btn {
+            width: 40px;
+            height: 40px;
+            background-color: rgba(0, 0, 0, 0.6);
+            color: white;
+            border: 1px solid white;
+            border-radius: 50%;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            -webkit-tap-highlight-color: transparent; /* 移除移动端点击高亮 */
+            touch-action: manipulation; /* 优化触摸体验 */
+        }
+        
+        /* 移动端适配 */
+        @media (max-width: 768px) {
+            .carousel-nav {
+                width: 45px;
+                height: 45px;
+                font-size: 24px;
+            }
+            
+            .prev {
+                left: 10px;
+            }
+            
+            .next {
+                right: 10px;
+            }
+            
+            .zoom-controls, .rotate-controls {
+                bottom: 25px;
+            }
+            
+            .zoom-controls {
+                right: 15px;
+            }
+            
+            .rotate-controls {
+                left: 15px;
+            }
+            
+            .zoom-btn, .rotate-btn {
+                width: 36px;
+                height: 36px;
+                font-size: 18px;
+            }
+            
+            .carousel-indicators {
+                bottom: 10px;
+            }
+            
+            .indicator {
+                width: 10px;
+                height: 10px;
+            }
+        }
+        
+        /* 更小的设备（如手机） */
+        @media (max-width: 480px) {
+            .carousel-slide img {
+                max-width: 95%;  /* 在小屏幕上增加图片显示区域 */
+            }
+            
+            .carousel-nav {
+                display: none !important; /* 在移动端隐藏导航按钮 */
+            }
+            
+            .zoom-btn, .rotate-btn {
+                width: 32px;
+                height: 32px;
+                font-size: 16px;
+            }
+            
+            .zoom-controls {
+                right: 10px;
+                gap: 6px;
+            }
+            
+            .rotate-controls {
+                left: 10px;
+                gap: 6px;
+            }
+        }
+        
+        /* 横屏模式优化 */
+        @media (max-height: 480px) and (orientation: landscape) {
+            .carousel-slide img {
+                max-height: 70vh;  /* 在横屏模式下减小图片高度 */
+            }
+            
+            .zoom-controls, .rotate-controls {
+                bottom: 15px;
+            }
+            
+            .carousel-indicators {
+                bottom: 5px;
+            }
+            
+            .carousel-nav {
+                display: none !important; /* 在移动端横屏模式下也隐藏导航按钮 */
+            }
+        }
+        
+        /* 滑动提示样式 */
+        .swipe-hint {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 25px;
+            font-size: 16px;
+            z-index: 100;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            pointer-events: none;
+            text-align: center;
+            width: auto;
+            max-width: 80%;
+        }
+        
+        .swipe-hint.visible {
+            opacity: 1;
+        }
+        
+        .carousel-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 60px; /* 增加按钮尺寸 */
+            height: 60px;
+            background-color: rgba(0, 0, 0, 0.6); /* 更改背景色为深色，提高对比度 */
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            font-size: 32px; /* 增加字体大小 */
+            color: white; /* 更改为白色文字 */
+            border: 2px solid white; /* 添加白色边框 */
+            outline: none;
+            z-index: 10;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4); /* 添加阴影 */
+        }
+        
+        .carousel-nav:hover {
+            background-color: rgba(0, 0, 0, 0.8);
+            transform: translateY(-50%) scale(1.1); /* 悬停时稍微放大 */
+        }
+        
+        .prev {
+            left: 25px;
+        }
+        
+        .next {
+            right: 25px;
+        }
+        
+        .carousel-indicators {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            z-index: 10;
+        }
+        
+        .indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .indicator.active {
+            background-color: white;
+            transform: scale(1.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="carousel-container">
+        <div class="carousel-track" id="track">
+            <!-- 幻灯片将通过JS动态生成 -->
+        </div>
+        
+        <button class="carousel-nav prev" id="prev">&lt;</button>
+        <button class="carousel-nav next" id="next">&gt;</button>
+        
+        <div class="carousel-indicators" id="indicators">
+            <!-- 指示器将通过JS动态生成 -->
+        </div>
+        
+        <div class="zoom-controls" id="zoom-controls">
+            <div class="zoom-btn" id="zoom-in">+</div>
+            <div class="zoom-btn" id="zoom-out">-</div>
+        </div>
+        
+        <div class="rotate-controls" id="rotate-controls">
+            <div class="rotate-btn" id="rotate-left">↺</div>
+            <div class="rotate-btn" id="rotate-right">↻</div>
+        </div>
+
+        <!-- 添加滑动提示 -->
+        <div class="swipe-hint" id="swipe-hint">左右滑动切换图片</div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const track = document.getElementById('track');
+            const nextButton = document.getElementById('next');
+            const prevButton = document.getElementById('prev');
+            const indicatorsContainer = document.getElementById('indicators');
+            const zoomInButton = document.getElementById('zoom-in');
+            const zoomOutButton = document.getElementById('zoom-out');
+            const rotateLeftButton = document.getElementById('rotate-left');
+            const rotateRightButton = document.getElementById('rotate-right');
+            const swipeHint = document.getElementById('swipe-hint');
+            
+            // 图片数据数组
+            const images = [
+                { src: './image/01.jpg', alt: '图片1' },
+								{ src: './image/02.jpg', alt: '图片2' },
+								{ src: './image/03.jpg', alt: '图片3' },
+								{ src: './image/04.jpg', alt: '图片4' },
+								{ src: './image/05.jpg', alt: '图片5' },
+								{ src: './image/06.jpg', alt: '图片6' },
+								{ src: './image/07.jpg', alt: '图片7' },
+								{ src: './image/08.jpg', alt: '图片8' },
+								{ src: './image/09.jpg', alt: '图片9' },
+								{ src: './image/10.jpg', alt: '图片10' },
+								{ src: './image/11.jpg', alt: '图片11' },
+								{ src: './image/12.jpg', alt: '图片12' },
+								{ src: './image/13.jpg', alt: '图片13' },
+								{ src: './image/14.jpg', alt: '图片14' },
+            ];
+            
+            // 动态生成幻灯片
+            images.forEach((image) => {
+                const slide = document.createElement('div');
+                slide.classList.add('carousel-slide');
+                
+                const img = document.createElement('img');
+                img.src = image.src;
+                img.alt = image.alt;
+                
+                slide.appendChild(img);
+                track.appendChild(slide);
+            });
+            
+            const slides = Array.from(document.querySelectorAll('.carousel-slide'));
+            let currentIndex = 0;
+            const slideWidth = slides[0].getBoundingClientRect().width;
+            
+            // 创建指示器
+            images.forEach((_, index) => {
+                const indicator = document.createElement('div');
+                indicator.classList.add('indicator');
+                if (index === 0) indicator.classList.add('active');
+                indicator.addEventListener('click', () => goToSlide(index));
+                indicatorsContainer.appendChild(indicator);
+            });
+            
+            const indicators = Array.from(document.querySelectorAll('.indicator'));
+            
+            // 移动到指定幻灯片
+            function goToSlide(index) {
+                if (index < 0) index = slides.length - 1;
+                if (index >= slides.length) index = 0;
+                
+                // 重置当前图片的旋转和缩放
+                const currentImg = slides[currentIndex].querySelector('img');
+                currentImg.style.transform = '';
+                
+                // 更新当前索引和位置
+                track.style.transform = `translateX(${-slideWidth * index}px)`;
+                indicators.forEach((indicator, i) => {
+                    if (i === index) {
+                        indicator.classList.add('active');
+                    } else {
+                        indicator.classList.remove('active');
+                    }
+                });
+                
+                currentIndex = index;
+                currentScale = 1;
+                currentRotation = 0;
+            }
+            
+            // 下一张和上一张按钮事件
+            nextButton.addEventListener('click', () => {
+                goToSlide(currentIndex + 1);
+            });
+            
+            prevButton.addEventListener('click', () => {
+                goToSlide(currentIndex - 1);
+            });
+            
+            // 触摸滑动功能
+            let touchStartX = 0;
+            let touchEndX = 0;
+            
+            track.addEventListener('touchstart', (e) => {
+                touchStartX = e.changedTouches[0].screenX;
+            }, {passive: true});
+            
+            track.addEventListener('touchend', (e) => {
+                touchEndX = e.changedTouches[0].screenX;
+                handleSwipe();
+            }, {passive: true});
+            
+            function handleSwipe() {
+                const threshold = 50; // 滑动阈值
+                if (touchStartX - touchEndX > threshold) {
+                    // 向左滑动，显示下一张
+                    goToSlide(currentIndex + 1);
+                } else if (touchEndX - touchStartX > threshold) {
+                    // 向右滑动，显示上一张
+                    goToSlide(currentIndex - 1);
+                }
+            }
+            
+            // 键盘左右键导航
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowRight') {
+                    goToSlide(currentIndex + 1);
+                } else if (e.key === 'ArrowLeft') {
+                    goToSlide(currentIndex - 1);
+                }
+            });
+            
+            // 图片缩放功能
+            let currentScale = 1;
+            const scaleStep = 0.1;
+            const minScale = 1;
+            const maxScale = 3;
+            
+            // 图片旋转功能
+            let currentRotation = 0;
+            const rotateStep = 90; // 每次旋转90度
+            
+            function updateImageTransform() {
+                const img = slides[currentIndex].querySelector('img');
+                img.style.transform = `scale(${currentScale}) rotate(${currentRotation}deg)`;
+            }
+            
+            zoomInButton.addEventListener('click', () => {
+                if (currentScale < maxScale) {
+                    currentScale += scaleStep;
+                    updateImageTransform();
+                }
+            });
+            
+            zoomOutButton.addEventListener('click', () => {
+                if (currentScale > minScale) {
+                    currentScale -= scaleStep;
+                    updateImageTransform();
+                }
+            });
+            
+            rotateLeftButton.addEventListener('click', () => {
+                currentRotation -= rotateStep;
+                updateImageTransform();
+            });
+            
+            rotateRightButton.addEventListener('click', () => {
+                currentRotation += rotateStep;
+                updateImageTransform();
+            });
+            
+            // 显示滑动提示（仅在移动设备上）
+            function showSwipeHint() {
+                if (window.innerWidth <= 768) {
+                    swipeHint.classList.add('visible');
+                    setTimeout(() => {
+                        swipeHint.classList.remove('visible');
+                    }, 3000); // 3秒后隐藏提示
+                }
+            }
+            
+            // 页面加载后显示滑动提示
+            showSwipeHint();
+            
+            // 在窗口大小改变时重新检查是否需要显示提示
+            window.addEventListener('resize', () => {
+                if (window.innerWidth <= 768) {
+                    showSwipeHint();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
